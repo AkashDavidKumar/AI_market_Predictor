@@ -1,0 +1,12 @@
+Flask
+Flask-SQLAlchemy
+PyMySQL
+python-dotenv
+Flask-JWT-Extended
+Flask-CORS
+scikit-learn
+pandas
+numpy
+joblib
+pytest
+requests

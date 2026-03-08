@@ -1,0 +1,45 @@
+# Environments
+venv/
+env/
+.env
+.venv
+env.bak/
+venv.bak/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest / Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs and databases
+*.log
+*.sqlite3
+
+# ML Specific
+backend/model/*.joblib
+backend/dataset/*.csv
+!backend/dataset/sample_dataset.csv
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Postman
+postman_environment.json
+postman_collection.json
