@@ -14,22 +14,9 @@ const CropSuggestions = () => {
         const fetchCrops = async () => {
             try {
                 const data = await predictionService.getCropSuggestions();
-                if (data && data.length > 0 && typeof data[0] === 'object') {
-                    setCrops(data);
-                } else {
-                    // fallback dummy data if backend just returns strings or fails
-                    throw new Error("Needs mock");
-                }
             } catch (err) {
-                // Fallback layout since API might not exactly return structured data
-                setCrops([
-                    { name: "Wheat", score: 92, bestMarket: "Delhi", expectedPrice: 2250, trend: "up" },
-                    { name: "Rice (Basmati)", score: 88, bestMarket: "Pune", expectedPrice: 3100, trend: "up" },
-                    { name: "Cotton", score: 75, bestMarket: "Mumbai", expectedPrice: 6200, trend: "down" },
-                    { name: "Sugarcane", score: 85, bestMarket: "Bangalore", expectedPrice: 350, trend: "up" },
-                    { name: "Soybean", score: 80, bestMarket: "Indore", expectedPrice: 4200, trend: "up" },
-                    { name: "Maize", score: 70, bestMarket: "Hyderabad", expectedPrice: 1800, trend: "down" },
-                ]);
+                console.error("Crops fetch failed", err);
+                setError("No crop suggestions currently available. Please try again later.");
             } finally {
                 setLoading(false);
             }

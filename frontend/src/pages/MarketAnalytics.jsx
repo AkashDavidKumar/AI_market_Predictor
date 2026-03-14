@@ -1,40 +1,19 @@
-import React, { useState, useEffect } from "react";
-import { Filter, BarChart2 } from "lucide-react";
-import MarketChart from "../components/MarketChart";
-import { Loader } from "../components/Loader";
-import { formatLineChartData, formatBarChartData, formatRadarChartData } from "../utils/chartHelpers";
-
-// Simulated fetcher since endpoints might not be fully seeded yet
-const fetchAnalytics = async () => {
-    return new Promise(resolve => {
-        setTimeout(() => {
-            resolve({
-                line: formatLineChartData([
-                    { date: "Jan", price: 1800 }, { date: "Feb", price: 1950 }, { date: "Mar", price: 2100 },
-                    { date: "Apr", price: 2000 }, { date: "May", price: 2200 }, { date: "Jun", price: 2350 }
-                ]),
-                bar: formatBarChartData([
-                    { market: "Delhi", price: 2350 }, { market: "Pune", price: 2100 },
-                    { market: "Mumbai", price: 2400 }, { market: "Bangalore", price: 2250 }
-                ]),
-                radar: formatRadarChartData({
-                    labels: ["Yield", "Demand", "Price Stability", "Weather Resilience", "Growth Speed"],
-                    values: [85, 92, 78, 65, 80]
-                })
-            });
-        }, 800);
-    });
-};
+import { marketService } from "../services/marketService";
 
 const MarketAnalytics = () => {
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState(null);
 
     useEffect(() => {
-        fetchAnalytics().then(res => {
-            setData(res);
-            setLoading(false);
-        });
+        marketService.getAnalytics('Wheat')
+            .then(res => {
+                setData(res);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error("Analytics fetch failed", err);
+                setLoading(false);
+            });
     }, []);
 
     return (

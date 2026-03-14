@@ -14,4 +14,8 @@ export const marketService = {
         const response = await api.get(`/markets/recommend?crop=${crop}`);
         return response.data;
     },
+    getAnalytics: async (crop) => {
+        const response = await api.get(`/charts?crop=${crop}`);
+        return response.data;
+    },
 };

@@ -26,13 +26,14 @@ const Prediction = () => {
             try {
                 // Fallback dummy data if backend empty for DX
                 const m = await marketService.getMarkets();
-                setMarkets(m.length ? m : ["Delhi", "Pune", "Mumbai", "Bangalore"]);
+                setMarkets(Array.isArray(m.markets) ? m.markets : []);
 
                 const c = await predictionService.getCropSuggestions();
-                setCrops(c.length ? c.map(x => typeof x === 'string' ? x : x.name) : ["Wheat", "Rice", "Sugarcane", "Cotton"]);
+                setCrops(c.length ? c.map(x => typeof x === 'string' ? x : x.name) : []);
             } catch (err) {
-                setMarkets(["Delhi", "Pune", "Mumbai"]);
-                setCrops(["Wheat", "Rice"]);
+                console.error("Dropdown fetch failed", err);
+                setMarkets([]);
+                setCrops([]);
             }
         };
         fetchDropdowns();
@@ -51,14 +52,8 @@ const Prediction = () => {
             setResult(res);
             addToast("Prediction completed successfully!", "success");
         } catch (err) {
-            // Fallback for demonstration since we are writing frontend connected to potentially failing backend
-            setResult({
-                price: Math.floor(Math.random() * 2000) + 1500,
-                trend: Math.random() > 0.5 ? "up" : "down",
-                confidence: Math.floor(Math.random() * 20) + 75,
-                recommendedMarket: formData.market || "Local Market",
-            });
-            addToast("Backend unavailable. Showing simulated prediction.", "warning");
+            console.error("Prediction failed", err);
+            addToast(err.response?.data?.error || "Prediction failed. Please try again.", "error");
         } finally {
             setLoading(false);
         }

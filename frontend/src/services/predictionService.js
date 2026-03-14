@@ -2,8 +2,13 @@ import api from "./api";
 
 export const predictionService = {
     predictPrice: async (predictionQuery) => {
-        // { crop, market, date }
-        const response = await api.post("/predict-price", predictionQuery);
+        // { crop, market, date } -> maps to { crop_name, market, date }
+        const payload = {
+            crop_name: predictionQuery.crop,
+            market: predictionQuery.market,
+            date: predictionQuery.date
+        };
+        const response = await api.post("/predict-price", payload);
         return response.data;
     },
     getCropSuggestions: async () => {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Sun, CloudRain, Droplets, Wind, AlertTriangle, CheckCircle } from "lucide-react";
+import api from "../services/api";
 // Assuming we might have a weather service later, but for now we'll simulate or use a dummy endpoint 
 // since the spec mentioned `GET /api/weather` but it wasn't strictly in the initial API list.
 // We will mock the fetching process as per standard widget design.
@@ -9,18 +10,22 @@ const WeatherWidget = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Simulate fetching weather
-        setTimeout(() => {
-            setData({
-                temp: 31,
-                condition: "Sunny",
-                humidity: 45,
-                rainfall: 2,
-                wind: 12,
-                advisory: "Good for farming",
-            });
-            setLoading(false);
-        }, 1000);
+        api.get("/weather?location=Delhi")
+            .then(res => {
+                setData(res.data);
+            })
+            .catch(err => {
+                console.error("Weather fetch failed", err);
+                setData({
+                    temp: 30,
+                    condition: "Sunny",
+                    humidity: 50,
+                    rainfall: 0,
+                    wind: 10,
+                    advisory: "Error loading weather",
+                });
+            })
+            .finally(() => setLoading(false));
     }, []);
 
     if (loading) {

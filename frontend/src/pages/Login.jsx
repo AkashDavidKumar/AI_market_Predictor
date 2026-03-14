@@ -10,17 +10,30 @@ const Login = () => {
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-    const { login } = useAuth();
+    const { login, token: authToken } = useAuth();
     const { addToast } = useToast();
+
+    // Redirect if already logged in
+    React.useEffect(() => {
+        if (authToken) {
+            navigate("/dashboard");
+        }
+    }, [authToken, navigate]);
 
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
         try {
             const data = await authService.login({ email, password });
-            login(data.token, data.user);
-            addToast("Login successful!", "success");
-            navigate("/dashboard");
+            const token = data.access_token || data.token;
+            
+            if (token) {
+                login(token, data.user);
+                addToast("Login successful!", "success");
+                navigate("/dashboard");
+            } else {
+                throw new Error("Login succeeded but no access token was returned.");
+            }
         } catch (err) {
             addToast(err.response?.data?.error || "Login failed. Please check your credentials.", "error");
         } finally {

@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from config import Config
 from database.db_connection import db
@@ -9,7 +9,7 @@ def create_app():
     app.config.from_object(Config)
     
     # Initialize extensions
-    CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
+    CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175"]}}, supports_credentials=True)
     jwt = JWTManager(app)
     
     # Register Blueprints
@@ -40,6 +40,16 @@ def create_app():
     @app.route('/api/health', methods=['GET'])
     def health():
         return jsonify({"status": "running"}), 200
+
+    @app.route('/api/weather', methods=['GET'])
+    def get_weather():
+        from services.weather_service import WeatherService
+        location = request.args.get('location', 'Delhi')
+        weather = WeatherService.get_weather(location)
+        # Add basic advisory logic for frontend
+        weather['advisory'] = "Good for farming" if weather['temperature'] < 35 else "Heat alert"
+        weather['condition'] = "Sunny" if weather.get('rainfall', 0) == 0 else "Rainy"
+        return jsonify(weather), 200
 
     import os
     import logging

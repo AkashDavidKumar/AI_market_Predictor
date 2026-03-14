@@ -6,8 +6,11 @@ import datetime
 alert_bp = Blueprint('alert_bp', __name__)
 
 def doc_to_dict(doc):
-    doc['id'] = str(doc.pop('_id'))
-    return doc
+    if doc is None: return None
+    d = dict(doc)
+    if '_id' in d:
+        d['id'] = str(d.pop('_id'))
+    return d
 
 @alert_bp.route('/create', methods=['POST'])
 @jwt_required()

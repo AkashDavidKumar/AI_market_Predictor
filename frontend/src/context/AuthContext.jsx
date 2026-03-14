@@ -4,32 +4,38 @@ import { Navigate, Outlet } from "react-router-dom";
 // 1. Context Creation
 const AuthContext = createContext(null);
 
+// Helper to parse JWT or return default user
+const parseUserToken = (token) => {
+    if (!token) return null;
+    try {
+        if (token.includes(".")) {
+            const payloadBase64 = token.split(".")[1];
+            if (payloadBase64) {
+                return JSON.parse(atob(payloadBase64));
+            }
+        }
+        return { role: "user", name: "User" };
+    } catch (err) {
+        console.error("Token decode failed", err);
+        return { role: "user", name: "User" };
+    }
+};
+
 // 2. AuthProvider Component
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [token, setToken] = useState(localStorage.getItem("token") || null);
-    const [loading, setLoading] = useState(true);
+    // Initialize state synchronously from storage
+    const initialToken = localStorage.getItem("token") || null;
+    const [token, setToken] = useState(initialToken);
+    const [user, setUser] = useState(parseUserToken(initialToken));
+    const [loading, setLoading] = useState(false);
 
     // Derive simple admin check
     const isAdmin = user?.role === "admin";
 
-    // Simulate token parsing / initial logic
+    // Keep state in sync with token changes (e.g. from other tabs or manual setToken)
     useEffect(() => {
         if (token) {
-            // In a real app, you would decode the JWT or call a /me endpoint here:
-            try {
-                const payloadBase64 = token.split(".")[1];
-                if (payloadBase64) {
-                    const payload = JSON.parse(atob(payloadBase64));
-                    setUser(payload); // payload assumed to hold role
-                } else {
-                    // Dummy logic fallback if no real JWT structured
-                    setUser({ role: "user", name: "Guest" });
-                }
-            } catch (err) {
-                console.error("Token decode failed", err);
-                logout();
-            }
+            setUser(parseUserToken(token));
         } else {
             setUser(null);
         }
@@ -39,7 +45,11 @@ export const AuthProvider = ({ children }) => {
     const login = (newToken, userData) => {
         localStorage.setItem("token", newToken);
         setToken(newToken);
-        setUser(userData);
+        if (userData) {
+            setUser(userData);
+        } else {
+            setUser(parseUserToken(newToken));
+        }
     };
 
     const logout = () => {
@@ -48,10 +58,8 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
     };
 
-    if (loading) return <div>Loading Auth...</div>;
-
     return (
-        <AuthContext.Provider value={{ user, token, isAdmin, login, logout }}>
+        <AuthContext.Provider value={{ user, token, isAdmin, login, logout, loading }}>
             {children}
         </AuthContext.Provider>
     );
@@ -64,7 +72,11 @@ export const useAuth = () => {
 
 // 4. ProtectedRoute Component
 export const ProtectedRoute = ({ requireAdmin = false }) => {
-    const { token, isAdmin } = useAuth();
+    const { token, isAdmin, loading } = useAuth();
+
+    if (loading) {
+        return <div className="min-h-screen bg-cream flex items-center justify-center p-4 text-forest font-bold">Loading Auth...</div>;
+    }
 
     if (!token) {
         return <Navigate to="/login" replace />;

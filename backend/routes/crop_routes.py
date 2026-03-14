@@ -4,8 +4,11 @@ from database.db_connection import crops_collection
 crop_bp = Blueprint('crop_bp', __name__)
 
 def doc_to_dict(doc):
-    doc['id'] = str(doc.pop('_id'))
-    return doc
+    if doc is None: return None
+    d = dict(doc)
+    if '_id' in d:
+        d['id'] = str(d.pop('_id'))
+    return d
 
 @crop_bp.route('', methods=['GET'])
 def get_crops():

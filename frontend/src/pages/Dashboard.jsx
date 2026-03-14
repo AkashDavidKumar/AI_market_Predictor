@@ -8,50 +8,36 @@ import MarketChart from "../components/MarketChart";
 import { formatLineChartData } from "../utils/chartHelpers";
 import { predictionService } from "../services/predictionService";
 import { alertService } from "../services/alertService";
-import { marketService } from "../services/marketService";
+import { dashboardService } from "../services/dashboardService";
 
 const Dashboard = () => {
     const [loading, setLoading] = useState(true);
-    const [error, setError] = defaultState => useState(null);
+    const [error, setError] = useState(null);
     const [data, setData] = useState({
         trendChart: null,
         crops: [],
         alerts: [],
         marketsCount: 0,
+        bestPrice: null
     });
 
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
                 setLoading(true);
-                // In a real scenario, these could be Promise.all, but we handle individually for safety
-                const cropsData = await predictionService.getCropSuggestions();
-                const alertsData = await alertService.getUserAlerts();
-                const marketsData = await marketService.getMarkets();
+                const dashboardData = await dashboardService.getDashboardData();
                 const trendRaw = await marketService.getMarketTrends("Wheat", "Delhi");
 
                 setData({
                     trendChart: formatLineChartData(trendRaw),
-                    crops: cropsData.slice(0, 3) || [],
-                    alerts: alertsData.slice(0, 4) || [], // Limit to 4 recent
-                    marketsCount: marketsData.length || 0,
+                    crops: dashboardData.cropSuggestions || [],
+                    alerts: dashboardData.alerts || [],
+                    marketsCount: dashboardData.activeMarkets || 0,
+                    bestPrice: dashboardData.bestPrice
                 });
             } catch (err) {
-                // setError(err.message || "Failed to load dashboard data.");
-                // Because backend might not exactly have the seed data ready, we will fallback to empty states rather than full error block
-                setData({
-                    trendChart: formatLineChartData([
-                        { date: "Mon", price: 2100 }, { date: "Tue", price: 2150 }, { date: "Wed", price: 2200 }, { date: "Thu", price: 2180 }, { date: "Fri", price: 2250 }
-                    ]),
-                    crops: [
-                        { id: 1, name: "Wheat", score: 92, bestMarket: "Delhi", expectedPrice: 2250, trend: "up" },
-                        { id: 2, name: "Rice", score: 85, bestMarket: "Pune", expectedPrice: 3100, trend: "up" },
-                    ],
-                    alerts: [
-                        { id: 1, crop: "Wheat", condition: "above", targetPrice: 2200, status: "triggered" },
-                    ],
-                    marketsCount: 12,
-                });
+                console.error("Dashboard fetch failed", err);
+                setError("Failed to load dashboard data. Please try again later.");
             } finally {
                 setLoading(false);
             }
@@ -80,7 +66,12 @@ const Dashboard = () => {
 
             {/* Row 1: Stats */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-                <StatCard title="Today's Best Price" value="₹2,250" icon={IndianRupee} colorClass="border-harvest" />
+                <StatCard 
+                    title="Today's Best Price" 
+                    value={data.bestPrice ? `₹${data.bestPrice.price}` : "N/A"} 
+                    icon={IndianRupee} 
+                    colorClass="border-harvest" 
+                />
                 <StatCard title="Top Recommended" value={data.crops[0]?.name || "-"} icon={Leaf} colorClass="border-forest" />
                 <StatCard title="Active Alerts" value={data.alerts.length} icon={Bell} colorClass="border-rust" />
                 <StatCard title="Tracked Markets" value={data.marketsCount} icon={Store} colorClass="border-olive" />
