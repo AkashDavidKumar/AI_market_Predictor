@@ -1,15 +1,14 @@
-from models.market_model import Market
+import datetime
 from ml.predictor import predictor_instance
 from services.weather_service import WeatherService
-from database.db_connection import db
-import datetime
+from database.db_connection import markets_collection
 
 class MarketService:
     @staticmethod
     def get_all_markets():
-        markets = Market.query.all()
+        markets = list(markets_collection.find({}))
         if markets:
-            return {"markets": [m.name for m in markets]}, 200
+            return {"markets": [m.get("name") for m in markets]}, 200
         else:
             return {"markets": ["Koyambedu", "Salem", "Madurai"]}, 200
             

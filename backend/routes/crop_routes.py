@@ -1,12 +1,22 @@
 from flask import Blueprint, jsonify
-from models.crop_model import Crop
+from database.db_connection import crops_collection
 
 crop_bp = Blueprint('crop_bp', __name__)
 
+def doc_to_dict(doc):
+    doc['id'] = str(doc.pop('_id'))
+    return doc
+
+@crop_bp.route('', methods=['GET'])
+def get_crops():
+    crops = list(crops_collection.find({}))
+    if crops:
+        return jsonify([doc_to_dict(c) for c in crops]), 200
+    return jsonify([]), 200
+
 @crop_bp.route('/suggestions', methods=['GET'])
 def get_suggestions():
-    crops = Crop.query.all()
+    crops = list(crops_collection.find({}).sort("profitability", -1).limit(3))
     if crops:
-        return jsonify({"recommended_crops": [c.name for c in crops]}), 200
-    else:
-        return jsonify({"recommended_crops": ["tomato", "onion", "beans"]}), 200
+        return jsonify([doc_to_dict(c) for c in crops]), 200
+    return jsonify([]), 200

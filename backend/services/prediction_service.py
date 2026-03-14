@@ -1,9 +1,7 @@
 import datetime
 from ml.predictor import predictor_instance
 from services.weather_service import WeatherService
-from models.price_model import Prediction
-from database.db_connection import db
-
+from database.db_connection import predictions_collection
 class PredictionService:
     @staticmethod
     def predict_price(crop_name, market, date_str, user_id=None):
@@ -27,15 +25,17 @@ class PredictionService:
                 season=season
             )
             
-            prediction_record = Prediction(
-                user_id=user_id, # Can be None if anonymous
-                crop_name=crop_name,
-                market=market,
-                predicted_date=date_obj,
-                predicted_price=predicted_price
-            )
-            db.session.add(prediction_record)
-            db.session.commit()
+            from database.db_connection import predictions_collection
+            
+            prediction_record = {
+                "user_id": user_id, # Can be None if anonymous
+                "crop_name": crop_name,
+                "market": market,
+                "predicted_date": date_obj.strftime('%Y-%m-%d'),
+                "predicted_price": predicted_price,
+                "created_at": datetime.datetime.utcnow()
+            }
+            predictions_collection.insert_one(prediction_record)
             
             return {
                 "predicted_price": round(predicted_price, 2),

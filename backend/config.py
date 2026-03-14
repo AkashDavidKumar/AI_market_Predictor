@@ -4,14 +4,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'default_secret')
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'default_jwt_secret')
+    SECRET_KEY = os.getenv('SECRET_KEY')
+    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')
     
-    # Defaults to SQLite if DATABASE_URL is somehow missing
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        'DATABASE_URL', 
-        'sqlite:///farm_ai.db'
-    )
+    # Database Configuration (MongoDB)
+    MONGO_URI = os.getenv('MONGO_URI')
+    MONGO_DB_NAME = os.getenv('MONGO_DB_NAME')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    WEATHER_API_KEY = os.environ.get('WEATHER_API_KEY', '')
+    WEATHER_API_KEY = os.getenv('WEATHER_API_KEY')

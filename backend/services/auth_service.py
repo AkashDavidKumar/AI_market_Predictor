@@ -1,38 +1,47 @@
-from models.user_model import User
-from database.db_connection import db
+import datetime
+from database.db_connection import users_collection
 from utils.auth_utils import hash_password, verify_password
 from flask_jwt_extended import create_access_token
-import datetime
 
 class AuthService:
     @staticmethod
     def register_user(name, email, password, role='farmer', language='en'):
-        if User.query.filter_by(email=email).first():
+        if users_collection.find_one({"email": email}):
             return {"error": "Email already exists"}, 400
             
         hashed_password = hash_password(password)
-        new_user = User(
-            name=name,
-            email=email,
-            password=hashed_password,
-            role=role,
-            language=language
-        )
+        new_user = {
+            "name": name,
+            "email": email,
+            "password": hashed_password,
+            "role": role,
+            "language": language,
+            "created_at": datetime.datetime.utcnow()
+        }
         
-        db.session.add(new_user)
-        db.session.commit()
-        
-        return {"message": "User registered successfully", "user_id": new_user.id}, 201
+        try:
+            print(f"[DEBUG] Attempting to register user with email: {email}")
+            print(f"[DEBUG] User data being inserted: {{'name': '{name}', 'email': '{email}', 'role': '{role}', 'language': '{language}'}}")
+            
+            result = users_collection.insert_one(new_user)
+            
+            print(f"[DEBUG] MongoDB insertion successful. inserted_id: {str(result.inserted_id)}")
+            return {"message": "User registered successfully", "user_id": str(result.inserted_id)}, 201
+            
+        except Exception as e:
+            print(f"[ERROR] Failed to insert user into MongoDB: {e}")
+            return {"error": "Internal server error during registration"}, 500
         
     @staticmethod
     def login_user(email, password):
-        user = User.query.filter_by(email=email).first()
-        if not user or not verify_password(password, user.password):
+        user = users_collection.find_one({"email": email})
+        
+        if not user or not verify_password(password, user.get("password")):
             return {"error": "Invalid email or password"}, 401
             
         access_token = create_access_token(
-            identity=str(user.id),
-            additional_claims={"role": user.role},
+            identity=str(user["_id"]),
+            additional_claims={"role": user.get("role", "farmer")},
             expires_delta=datetime.timedelta(days=1)
         )
         
@@ -40,9 +49,9 @@ class AuthService:
             "message": "Login successful",
             "access_token": access_token,
             "user": {
-                "id": user.id,
-                "name": user.name,
-                "email": user.email,
-                "role": user.role
+                "id": str(user["_id"]),
+                "name": user.get("name"),
+                "email": user.get("email"),
+                "role": user.get("role")
             }
         }, 200

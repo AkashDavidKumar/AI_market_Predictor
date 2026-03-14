@@ -1,6 +1,5 @@
 Flask
-Flask-SQLAlchemy
-PyMySQL
+pymongo
 python-dotenv
 Flask-JWT-Extended
 Flask-CORS

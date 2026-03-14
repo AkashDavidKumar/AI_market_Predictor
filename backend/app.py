@@ -9,8 +9,7 @@ def create_app():
     app.config.from_object(Config)
     
     # Initialize extensions
-    CORS(app)
-    db.init_app(app)
+    CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
     jwt = JWTManager(app)
     
     # Register Blueprints
@@ -22,6 +21,7 @@ def create_app():
     from routes.alert_routes import alert_bp
     from routes.admin_routes import admin_bp
     from routes.chatbot_routes import chatbot_bp
+    from routes.dashboard_routes import dashboard_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(prediction_bp, url_prefix='/api')
@@ -31,6 +31,7 @@ def create_app():
     app.register_blueprint(alert_bp, url_prefix='/api/alerts')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
     app.register_blueprint(chatbot_bp, url_prefix='/api/chatbot')
+    app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
     
     @app.route('/', methods=['GET'])
     def index():
