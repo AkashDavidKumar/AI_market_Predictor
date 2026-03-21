@@ -17,12 +17,13 @@ def doc_to_dict(doc):
 def create_alert():
     user_id = get_jwt_identity()
     data = request.get_json()
-    if not data or not data.get('crop_name') or not data.get('target_price'):
-        return jsonify({"error": "Missing crop_name or target_price"}), 400
+    if not data or not data.get('crop_name') or not data.get('target_price') or not data.get('condition'):
+        return jsonify({"error": "Missing crop_name, condition, or target_price"}), 400
         
     new_alert = {
         "user_id": user_id,
         "crop_name": data['crop_name'],
+        "condition": data['condition'],
         "target_price": float(data['target_price']),
         "is_active": True,
         "created_at": datetime.datetime.utcnow()
@@ -37,3 +38,16 @@ def get_user_alerts():
     user_id = get_jwt_identity()
     alerts = list(alerts_collection.find({"user_id": user_id}))
     return jsonify({"alerts": [doc_to_dict(a) for a in alerts]}), 200
+
+@alert_bp.route('/<alert_id>', methods=['DELETE'])
+@jwt_required()
+def delete_alert(alert_id):
+    from bson import ObjectId
+    user_id = get_jwt_identity()
+    try:
+        result = alerts_collection.delete_one({"_id": ObjectId(alert_id), "user_id": user_id})
+        if result.deleted_count:
+            return jsonify({"message": "Alert deleted"}), 200
+        return jsonify({"error": "Alert not found"}), 404
+    except Exception:
+        return jsonify({"error": "Invalid alert ID"}), 400

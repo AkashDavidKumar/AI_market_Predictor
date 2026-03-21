@@ -1,17 +1,20 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_cors import cross_origin
+from services.chatbot_service import ChatbotService
 
 chatbot_bp = Blueprint('chatbot_bp', __name__)
 
-@chatbot_bp.route('', methods=['POST'])
+@chatbot_bp.route('', methods=['POST', 'OPTIONS'])
+@cross_origin(supports_credentials=True)
+@jwt_required(optional=True)
 def chatbot():
     data = request.get_json()
-    message = data.get('message', '').lower()
+    message = data.get('message', '')
+    user_id = get_jwt_identity()
     
-    if 'predict' in message or 'predicted price' in message:
-        return jsonify({"response": "To predict a price, you can use our prediction API with crop name, market, and date."}), 200
-    elif 'market' in message and 'best' in message:
-        return jsonify({"response": "Our market recommendation system can tell you the best market. Just provide the crop and date."}), 200
-    elif 'crop' in message and ('profitable' in message or 'best' in message):
-        return jsonify({"response": "Currently, Kharif season crops like tomatoes and onions show high demand. Use our crop suggestion tool for details."}), 200
-    else:
-        return jsonify({"response": "I am a simple AI assistant. I can help you with crop suggestions, market comparisons, and price predictions. How can I assist you further?"}), 200
+    if not message:
+        return jsonify({"response": "I didn't catch that. Could you please repeat?"}), 400
+        
+    response_text = ChatbotService.get_assistant_response(message, user_id)
+    return jsonify({"response": response_text}), 200

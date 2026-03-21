@@ -5,7 +5,7 @@ const PredictionCard = ({ prediction }) => {
     // prediction: { price: 2350, trend: "up", confidence: 92, recommendedMarket: "Delhi" }
     if (!prediction) return null;
 
-    const isUp = prediction.trend === "up";
+    const isUp = prediction.trend === "upward";
 
     return (
         <div className="bg-white rounded-2xl shadow-[0_4px_24px_rgba(74,92,26,0.12)] border-l-4 border-harvest p-6 animate-slide-up relative overflow-hidden">
@@ -15,10 +15,10 @@ const PredictionCard = ({ prediction }) => {
                     <p className="text-gray-500 font-body text-sm">Based on FormarAsOwner AI</p>
                 </div>
                 <div className={`p-3 rounded-full ${isUp ? "bg-olive/10" : "bg-rust/10"}`}>
-                    {isUp ? (
-                        <TrendingUp className="w-6 h-6 text-olive" />
+                    {prediction.trend === "upward" ? (
+                        <TrendingUp className="w-6 h-6 text-olive" title="Upward Trend" />
                     ) : (
-                        <TrendingDown className="w-6 h-6 text-rust" />
+                        <TrendingDown className="w-6 h-6 text-rust" title="Downward / Stable" />
                     )}
                 </div>
             </div>
@@ -27,7 +27,7 @@ const PredictionCard = ({ prediction }) => {
                 <span className="font-mono text-5xl font-bold text-harvest flex items-center">
                     <span className="text-3xl mr-1">₹</span>{prediction.price}
                 </span>
-                <span className="text-forest font-body font-medium ml-1">/ Quintal</span>
+                <span className="text-forest font-body font-medium ml-1"> {prediction.unit || "/ Quintal"}</span>
             </div>
 
             <div className="space-y-4 relative z-10">

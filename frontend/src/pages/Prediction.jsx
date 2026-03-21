@@ -4,10 +4,24 @@ import { marketService } from "../services/marketService";
 import PredictionCard from "../components/PredictionCard";
 import { useToast } from "../components/Toast";
 import { Calendar, Search } from "lucide-react";
+import SearchableDropdown from "../components/SearchableDropdown";
 
 const Prediction = () => {
-    const [crops, setCrops] = useState([]);
-    const [markets, setMarkets] = useState([]);
+    const [items, setItems] = useState({
+        crops: [],
+        vegetables: [],
+        fruits: [],
+        seeds: []
+    });
+    const [markets, setMarkets] = useState({});
+    
+    // Fallback static list
+    const FALLBACK_ITEMS = {
+        crops: ["Wheat", "Rice", "Maize", "Cotton", "Soybean"],
+        vegetables: ["Tomato", "Potato", "Onion", "Carrot", "Brinjal"],
+        fruits: ["Apple", "Banana", "Mango", "Orange", "Grapes"],
+        seeds: ["Groundnut Seed", "Sunflower Seed", "Mustard Seed"]
+    };
 
     const [formData, setFormData] = useState({
         crop: "",
@@ -15,25 +29,24 @@ const Prediction = () => {
         date: "",
     });
 
+    const [itemCategory, setItemCategory] = useState(null);
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
 
     const { addToast } = useToast();
 
     useEffect(() => {
-        // Fetch dropdown data
         const fetchDropdowns = async () => {
             try {
-                // Fallback dummy data if backend empty for DX
                 const m = await marketService.getMarkets();
-                setMarkets(Array.isArray(m.markets) ? m.markets : []);
+                setMarkets(m.markets || {});
 
-                const c = await predictionService.getCropSuggestions();
-                setCrops(c.length ? c.map(x => typeof x === 'string' ? x : x.name) : []);
+                const i = await predictionService.getItems();
+                setItems(Object.keys(i).length ? i : FALLBACK_ITEMS);
             } catch (err) {
                 console.error("Dropdown fetch failed", err);
-                setMarkets([]);
-                setCrops([]);
+                setMarkets({});
+                setItems(FALLBACK_ITEMS);
             }
         };
         fetchDropdowns();
@@ -59,6 +72,13 @@ const Prediction = () => {
         }
     };
 
+    const MARKET_PRIORITIES = {
+        vegetables: ["Azadpur", "Koyambedu", "Vashi", "KR Market", "Lasalgaon"],
+        fruits: ["Azadpur", "Koyambedu", "Vashi", "Nagpur"],
+        crops: ["Karnal", "Ludhiana", "Indore"],
+        seeds: ["Karnal", "Indore"]
+    };
+
     return (
         <div className="h-full flex flex-col">
             <div className="mb-6">
@@ -71,36 +91,32 @@ const Prediction = () => {
                 <div className="bg-cream border border-olive/30 p-6 sm:p-8 rounded-3xl shadow-sm h-fit">
                     <form onSubmit={handlePredict} className="space-y-6">
 
-                        <div>
-                            <label className="block text-forest font-bold mb-2">Select Crop</label>
-                            <select
-                                name="crop"
-                                required
-                                value={formData.crop}
-                                onChange={handleChange}
-                                className="w-full bg-white border-2 border-olive rounded-xl px-4 py-3 font-body text-forest focus:ring-4 focus:ring-harvest/20 focus:border-harvest transition-all focus:outline-none appearance-none"
-                            >
-                                <option value="">-- Choose a crop --</option>
-                                {crops.map((c, i) => <option key={i} value={c}>{c}</option>)}
-                            </select>
-                        </div>
+                        <SearchableDropdown
+                            label="Select Item (Crops, Veg, Fruits)"
+                            items={items}
+                            isCategorized={true}
+                            value={formData.crop}
+                            placeholder="Search crop, vegetable or fruit..."
+                            onChange={(item, category) => {
+                                setFormData(prev => ({ ...prev, crop: item }));
+                                setItemCategory(category);
+                            }}
+                        />
+
+                        <SearchableDropdown
+                            label="Select Market"
+                            items={markets}
+                            isCategorized={true}
+                            value={formData.market}
+                            placeholder="Search market (e.g. Azadpur, Koyambedu)..."
+                            priorityKeywords={itemCategory ? MARKET_PRIORITIES[itemCategory] : []}
+                            onChange={(market) => {
+                                setFormData(prev => ({ ...prev, market: market }));
+                            }}
+                        />
 
                         <div>
-                            <label className="block text-forest font-bold mb-2">Select Market</label>
-                            <select
-                                name="market"
-                                required
-                                value={formData.market}
-                                onChange={handleChange}
-                                className="w-full bg-white border-2 border-olive rounded-xl px-4 py-3 font-body text-forest focus:ring-4 focus:ring-harvest/20 focus:border-harvest transition-all focus:outline-none appearance-none"
-                            >
-                                <option value="">-- Choose a market --</option>
-                                {markets.map((m, i) => <option key={i} value={m}>{m}</option>)}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-forest font-bold mb-2">Target Date</label>
+                            <label className="block text-forest font-bold mb-2 text-sm font-body">Target Date</label>
                             <div className="relative">
                                 <input
                                     type="date"
@@ -108,7 +124,7 @@ const Prediction = () => {
                                     required
                                     value={formData.date}
                                     onChange={handleChange}
-                                    className="w-full bg-white border-2 border-olive rounded-xl px-4 py-3 pl-12 font-body text-forest focus:ring-4 focus:ring-harvest/20 focus:border-harvest transition-all focus:outline-none"
+                                    className="w-full bg-white border-2 border-olive rounded-xl px-4 py-3 pl-12 font-body text-forest focus:ring-4 focus:ring-harvest/20 focus:border-harvest transition-all focus:outline-none text-sm"
                                 />
                                 <Calendar className="absolute left-4 top-3.5 w-5 h-5 text-harvest pointer-events-none" />
                             </div>

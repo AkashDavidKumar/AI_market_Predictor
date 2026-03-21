@@ -1,0 +1,15 @@
+{
+  "name": "ai-market-predictor-runner",
+  "version": "1.0.0",
+  "description": "FormarAsOwner - Single Command Runner for Frontend and Backend",
+  "private": true,
+  "scripts": {
+    "start": "concurrently -n \"BACKEND,FRONTEND\" -c \"magenta,blue\" \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "cd backend && venv\\Scripts\\activate && python app.py",
+    "start:frontend": "cd frontend && npm run dev",
+    "start:mac": "concurrently -n \"BACKEND,FRONTEND\" -c \"magenta,blue\" \"cd backend && source venv/bin/activate && python app.py\" \"cd frontend && npm run dev\""
+  },
+  "dependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

@@ -12,3 +12,12 @@ markets_collection = db["markets"]
 prices_collection = db["market_prices"]
 alerts_collection = db["price_alerts"]
 predictions_collection = db["predictions"]
+notifications_collection = db["notifications"]
+
+# Performance Indexes
+print("Initializing Database Indexes...")
+prices_collection.create_index([("crop", 1), ("market", 1), ("date", -1)])
+crops_collection.create_index([("name", 1)])
+notifications_collection.create_index([("user_id", 1), ("created_at", -1)])
+predictions_collection.create_index([("user_id", 1), ("created_at", -1)])
+print("Database Indexes initialized successfully.")

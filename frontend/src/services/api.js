@@ -23,9 +23,18 @@ api.interceptors.response.use(
         // Extensive debug logging
         if (error.response) {
             console.error("API ERROR [RESPONSE]:", error.response.status, error.response.data);
+            
             if (error.response.status === 401) {
+                console.warn("Unauthorized! Clearing token and redirecting to login...");
                 localStorage.removeItem("token");
-                window.location.href = "/login";
+                
+                // Use a small delay to allow current component error states to set 
+                // but then force the redirect to the login page.
+                setTimeout(() => {
+                    if (window.location.pathname !== "/login") {
+                        window.location.href = "/login";
+                    }
+                }, 500);
             }
         } else if (error.request) {
             console.error("API ERROR [NETWORK]: No response received.", error.request);

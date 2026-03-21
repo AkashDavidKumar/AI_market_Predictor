@@ -5,20 +5,34 @@ import { Navigate, Outlet } from "react-router-dom";
 const AuthContext = createContext(null);
 
 // Helper to parse JWT or return default user
-const parseUserToken = (token) => {
+const parseUserFromStorage = () => {
+    const token = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+    
     if (!token) return null;
+    
+    if (storedUser) {
+        try {
+            return JSON.parse(storedUser);
+        } catch (err) {
+            console.error("Failed to parse stored user", err);
+        }
+    }
+
+    // Fallback to token decoding if user object not in storage
     try {
         if (token.includes(".")) {
             const payloadBase64 = token.split(".")[1];
             if (payloadBase64) {
-                return JSON.parse(atob(payloadBase64));
+                const decoded = JSON.parse(atob(payloadBase64));
+                return { ...decoded, name: decoded.name || "User" };
             }
         }
-        return { role: "user", name: "User" };
     } catch (err) {
         console.error("Token decode failed", err);
-        return { role: "user", name: "User" };
     }
+    
+    return { role: "user", name: "User" };
 };
 
 // 2. AuthProvider Component
@@ -26,7 +40,7 @@ export const AuthProvider = ({ children }) => {
     // Initialize state synchronously from storage
     const initialToken = localStorage.getItem("token") || null;
     const [token, setToken] = useState(initialToken);
-    const [user, setUser] = useState(parseUserToken(initialToken));
+    const [user, setUser] = useState(parseUserFromStorage());
     const [loading, setLoading] = useState(false);
 
     // Derive simple admin check
@@ -35,7 +49,7 @@ export const AuthProvider = ({ children }) => {
     // Keep state in sync with token changes (e.g. from other tabs or manual setToken)
     useEffect(() => {
         if (token) {
-            setUser(parseUserToken(token));
+            setUser(parseUserFromStorage());
         } else {
             setUser(null);
         }
@@ -44,16 +58,16 @@ export const AuthProvider = ({ children }) => {
 
     const login = (newToken, userData) => {
         localStorage.setItem("token", newToken);
-        setToken(newToken);
         if (userData) {
+            localStorage.setItem("user", JSON.stringify(userData));
             setUser(userData);
-        } else {
-            setUser(parseUserToken(newToken));
         }
+        setToken(newToken);
     };
 
     const logout = () => {
         localStorage.removeItem("token");
+        localStorage.removeItem("user");
         setToken(null);
         setUser(null);
     };

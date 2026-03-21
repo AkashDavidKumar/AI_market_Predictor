@@ -22,6 +22,11 @@ def create_app():
     from routes.admin_routes import admin_bp
     from routes.chatbot_routes import chatbot_bp
     from routes.dashboard_routes import dashboard_bp
+    from routes.weather_routes import weather_bp
+    from routes.quote_routes import quote_bp
+    from routes.notification_routes import notification_bp
+    from routes.sell_recommendation_routes import sell_recommendation_bp
+    from routes.current_price_routes import current_price_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(prediction_bp, url_prefix='/api')
@@ -30,8 +35,13 @@ def create_app():
     app.register_blueprint(analytics_bp, url_prefix='/api')
     app.register_blueprint(alert_bp, url_prefix='/api/alerts')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
-    app.register_blueprint(chatbot_bp, url_prefix='/api/chatbot')
+    app.register_blueprint(chatbot_bp, url_prefix='/api/chat')
     app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
+    app.register_blueprint(weather_bp, url_prefix='/api')
+    app.register_blueprint(quote_bp, url_prefix='/api')
+    app.register_blueprint(notification_bp, url_prefix='/api')
+    app.register_blueprint(sell_recommendation_bp, url_prefix='/api/sell-recommendation')
+    app.register_blueprint(current_price_bp, url_prefix='/api/current-prices')
     
     @app.route('/', methods=['GET'])
     def index():
@@ -41,15 +51,6 @@ def create_app():
     def health():
         return jsonify({"status": "running"}), 200
 
-    @app.route('/api/weather', methods=['GET'])
-    def get_weather():
-        from services.weather_service import WeatherService
-        location = request.args.get('location', 'Delhi')
-        weather = WeatherService.get_weather(location)
-        # Add basic advisory logic for frontend
-        weather['advisory'] = "Good for farming" if weather['temperature'] < 35 else "Heat alert"
-        weather['condition'] = "Sunny" if weather.get('rainfall', 0) == 0 else "Rainy"
-        return jsonify(weather), 200
 
     import os
     import logging

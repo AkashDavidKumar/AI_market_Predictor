@@ -9,6 +9,7 @@ import {
     Shield
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { CloudSun } from "lucide-react";
 
 const Sidebar = () => {
     const { user, isAdmin, logout } = useAuth();
@@ -19,6 +20,7 @@ const Sidebar = () => {
         { label: "Market Analytics", path: "/analytics", icon: BarChart2 },
         { label: "Crop Suggestions", path: "/crops", icon: Leaf },
         { label: "Alerts", path: "/alerts", icon: Bell },
+        { label: "Weather", path: "/weather", icon: CloudSun },
     ];
 
     if (isAdmin) {

@@ -5,10 +5,16 @@ import { Loader } from "../components/Loader";
 import { ErrorMessage } from "../components/ErrorMessage";
 import { useToast } from "../components/Toast";
 import { BellPlus, AlertTriangle, CheckCircle, Trash2 } from "lucide-react";
+import SearchableDropdown from "../components/SearchableDropdown";
 
 const Alerts = () => {
     const [alerts, setAlerts] = useState([]);
-    const [crops, setCrops] = useState([]);
+    const [items, setItems] = useState({
+        crops: [],
+        vegetables: [],
+        fruits: [],
+        seeds: []
+    });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -22,17 +28,16 @@ const Alerts = () => {
 
     const fetchData = async () => {
         try {
-            const c = await predictionService.getCropSuggestions();
-            setCrops(c.length ? c.map(x => typeof x === 'string' ? x : x.name) : ["Wheat", "Rice"]);
+            const i = await predictionService.getItems();
+            setItems(i);
 
             const a = await alertService.getUserAlerts();
-            // Dummy if backend empty
             if (a && a.length > 0) {
                 setAlerts(a);
             } else {
                 setAlerts([
-                    { id: 1, crop: "Wheat", condition: "above", targetPrice: 2200, status: "active" },
-                    { id: 2, crop: "Rice", condition: "below", targetPrice: 2900, status: "triggered" },
+                    { id: "dummy-1", crop: "Wheat", condition: "above", targetPrice: 2200, status: "active" },
+                    { id: "dummy-2", crop: "Rice", condition: "below", targetPrice: 2900, status: "triggered" },
                 ]);
             }
         } catch (err) {
@@ -52,24 +57,39 @@ const Alerts = () => {
 
     const handleCreateAlert = async (e) => {
         e.preventDefault();
+        if (!formData.crop) {
+            addToast("Please select a crop.", "error");
+            return;
+        }
         try {
-            // Assuming backend returns new alert obj or simply success
             await alertService.createAlert(formData);
             addToast(`Alert set for ${formData.crop} ${formData.condition} ₹${formData.targetPrice}`, "success");
-
-            // Opt temp add to UI
-            const newAlert = { id: Date.now(), ...formData, status: "active" };
-            setAlerts([newAlert, ...alerts]);
+            fetchData();
             setFormData({ crop: "", condition: "above", targetPrice: "" });
         } catch (err) {
-            addToast("Failed to create alert due to connection issue.", "error");
+            addToast("Failed to create alert.", "error");
         }
     };
 
-    const handleDelete = (id) => {
-        // No backend DELETE endpoint in spec, simulating UI removal
+    const handleDelete = async (id) => {
+        const originalAlerts = [...alerts];
         setAlerts((prev) => prev.filter((a) => a.id !== id));
-        addToast("Alert removed", "warning");
+
+        if (typeof id === 'string' && id.startsWith('dummy')) {
+            addToast("Demo alert removed", "warning");
+            return;
+        }
+
+        try {
+            await alertService.deleteAlert(id);
+            addToast("Alert removed", "warning");
+        } catch (err) {
+            console.error("Delete failed", err);
+            if (err.response?.status !== 404 && err.response?.status !== 400) {
+                setAlerts(originalAlerts);
+                addToast("Failed to remove alert from server.", "error");
+            }
+        }
     };
 
     if (loading) return <Loader message="Loading your price alerts..." />;
@@ -86,16 +106,14 @@ const Alerts = () => {
                 </h2>
 
                 <form onSubmit={handleCreateAlert} className="space-y-6">
-                    <div>
-                        <label className="block text-forest font-bold mb-2 text-sm font-body">Crop</label>
-                        <select
-                            name="crop" required value={formData.crop} onChange={handleChange}
-                            className="w-full bg-cream border-2 border-olive rounded-xl px-4 py-3 font-body text-forest focus:ring-4 focus:ring-harvest/20 focus:outline-none appearance-none"
-                        >
-                            <option value="">-- Choose Crop --</option>
-                            {crops.map((c, i) => <option key={i} value={c}>{c}</option>)}
-                        </select>
-                    </div>
+                    <SearchableDropdown
+                        label="Crop"
+                        items={items}
+                        isCategorized={true}
+                        value={formData.crop}
+                        placeholder="Choose Crop/Veg/Fruit"
+                        onChange={(item) => setFormData(prev => ({ ...prev, crop: item }))}
+                    />
 
                     <div>
                         <label className="block text-forest font-bold mb-2 text-sm font-body">Condition</label>

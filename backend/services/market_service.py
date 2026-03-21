@@ -6,11 +6,42 @@ from database.db_connection import markets_collection
 class MarketService:
     @staticmethod
     def get_all_markets():
-        markets = list(markets_collection.find({}))
-        if markets:
-            return {"markets": [m.get("name") for m in markets]}, 200
-        else:
-            return {"markets": ["Koyambedu", "Salem", "Madurai"]}, 200
+        # Predefined categorized Indian mandis as requested
+        categorized_markets = {
+            "north_india": [
+                "Azadpur Mandi (Delhi)",
+                "Karnal Grain Market (Haryana)",
+                "Ludhiana Mandi (Punjab)",
+                "Amritsar Mandi"
+            ],
+            "south_india": [
+                "Koyambedu Market (Chennai)",
+                "KR Market (Bangalore)",
+                "Madurai Mandi (Tamil Nadu)",
+                "Erode Turmeric Market (Tamil Nadu)",
+                "Guntur Chilli Market (Andhra Pradesh)"
+            ],
+            "west_india": [
+                "Vashi APMC (Mumbai)",
+                "Lasalgaon Mandi (Nashik - Onion Hub)",
+                "Indore Mandi (Madhya Pradesh)",
+                "Nagpur Mandi (Orange Market)"
+            ],
+            "east_india": [
+                "Kolkata Wholesale Market",
+                "Bhubaneswar Mandi",
+                "Patna Mandi",
+                "Guwahati Mandi"
+            ]
+        }
+        
+        # Merge with any database markets if they exist
+        db_markets = [m.get("name") for m in list(markets_collection.find({}))]
+        if db_markets:
+             if "other" not in categorized_markets: categorized_markets["other"] = []
+             categorized_markets["other"].extend([m for m in db_markets if m not in sum(categorized_markets.values(), [])])
+
+        return {"markets": categorized_markets}, 200
             
     @staticmethod
     def recommend_market(crop_name, date_str):
@@ -19,8 +50,9 @@ class MarketService:
         except ValueError:
             return {"error": "Invalid date format. Use YYYY-MM-DD"}, 400
             
-        markets_response, _ = MarketService.get_all_markets()
-        markets = markets_response["markets"]
+        markets_dict, _ = MarketService.get_all_markets()
+        # Flatten dictionary values into a single list of market names
+        markets = [m for sublist in markets_dict["markets"].values() for m in sublist]
         
         month = date_obj.month
         season = 'Rabi' if month in [10, 11, 12, 1, 2, 3] else 'Kharif'
